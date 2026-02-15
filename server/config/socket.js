@@ -1,5 +1,5 @@
 const { Server } = require("socket.io");
-const Room = require("../models/Room");
+const { prisma } = require("../config/db");
 
 const initSocket = (server) => {
   const io = new Server(server, {
@@ -12,14 +12,31 @@ const initSocket = (server) => {
   // Cleanup empty rooms periodically
   const cleanupRooms = async () => {
       try {
-          // Delete rooms empty for > 1 minute
           const oneMinuteAgo = new Date(Date.now() - 60000);
-          const result = await Room.deleteMany({ 
-              members: { $size: 0 },
-              lastEmptyAt: { $lt: oneMinuteAgo, $ne: null }
+          
+          // Prisma doesn't have direct array size query for JSON easily without raw query, so we might need raw query or fetch and filter.
+          // For simplicity/performance on small scale, we can fetch all rooms with lastEmptyAt set.
+          const roomsToCheck = await prisma.room.findMany({
+              where: {
+                  lastEmptyAt: {
+                      lt: oneMinuteAgo,
+                      not: null
+                  }
+              }
           });
-          if (result.deletedCount > 0) {
-              console.log(`Cleaned up ${result.deletedCount} empty rooms`);
+
+          let deletedCount = 0;
+          for (const room of roomsToCheck) {
+              // Double check members count from JSON
+              const members = room.members || [];
+              if (members.length === 0) {
+                  await prisma.room.delete({ where: { id: room.id } });
+                  deletedCount++;
+              }
+          }
+
+          if (deletedCount > 0) {
+              console.log(`Cleaned up ${deletedCount} empty rooms`);
           }
       } catch (e) {
           console.error('Cleanup error:', e);
@@ -38,107 +55,111 @@ const initSocket = (server) => {
       console.log(`${user.username} joined room ${roomId}`);
       
       try {
-          // 1. Try to update existing member ( Atomic )
-          // This handles "Refresh Page" scenario perfectly
-          let room = await Room.findOneAndUpdate(
-              { roomId, "members.username": user.username },
-              { 
-                  $set: { 
-                      "members.$.socketId": socket.id,
-                      "members.$.joinedAt": new Date()
-                  }
-              },
-              { new: true }
-          );
-
-          // 2. If not found (New User or New Room), Push or Create
-          if (!room) {
-              // Try to push to existing room
-              room = await Room.findOneAndUpdate(
-                  { roomId },
-                  { 
-                      $push: { members: { socketId: socket.id, username: user.username } },
-                      $setOnInsert: { // Only set these if creating (upsert)
-                           host: socket.id,
-                           hostUserId: user.userId || null,
-                           videoUrl: user.videoUrl || null,
-                           movieSlug: user.movieSlug || null,
-                           createdAt: new Date()
+          // Transaction to handle concurrent joins safely (mostly)
+          const room = await prisma.$transaction(async (tx) => {
+              // 1. Find or Create Room
+              let r = await tx.room.findUnique({ where: { roomId } });
+              
+              if (!r) {
+                  r = await tx.room.create({
+                      data: {
+                          roomId,
+                          host: socket.id,
+                          hostUserId: user.userId || null,
+                          videoUrl: user.videoUrl || null,
+                          movieSlug: user.movieSlug || null,
+                          members: [] // Initial empty members
                       }
-                  },
-                  { new: true, upsert: true } // Create if not exists
-              );
-          }
+                  });
+              }
 
-          // 3. Post-Update Logic (Host Check & Consistency)
-          // We fetched the updated room, now verify consistency
-          if (room) {
-              let changed = false;
+              // 2. Update Members List
+              let members = r.members || [];
+              if (!Array.isArray(members)) members = [];
 
-              // Ensure host exists
-              if (!room.host || !room.members.some(m => m.socketId === room.host)) {
-                  // Prioritize: 1. HostUserId, 2. First Member
-                  const hostUserMember = room.members.find(m => m.username === user.username && room.hostUserId === user.userId);
-                  if (hostUserMember) {
-                       room.host = hostUserMember.socketId;
-                       changed = true;
-                  } else if (room.members.length > 0) {
-                       room.host = room.members[0].socketId;
-                       changed = true;
+              // Remove existing entry for this user (if any, e.g. refresh)
+              const existingIndex = members.findIndex(m => m.username === user.username);
+              if (existingIndex !== -1) {
+                  members[existingIndex] = {
+                      socketId: socket.id,
+                      username: user.username,
+                      joinedAt: new Date()
+                  };
+              } else {
+                  members.push({
+                      socketId: socket.id,
+                      username: user.username,
+                      joinedAt: new Date()
+                  });
+              }
+
+              // 3. Update Room with new members
+              // Also update Host logic if needed
+              let host = r.host;
+              
+              // Ensure host exists in members
+              if (!host || !members.some(m => m.socketId === host)) {
+                   // Prioritize HostUserId match
+                   const hostUserMember = members.find(m => m.username === user.username && r.hostUserId === user.userId);
+                   if (hostUserMember) {
+                       host = hostUserMember.socketId;
+                   } else if (members.length > 0) {
+                       host = members[0].socketId;
+                   }
+              }
+
+              // Claim host if hostUserId matches
+              if (user.userId && r.hostUserId === user.userId && host !== socket.id) {
+                   const hostStillHere = members.some(m => m.socketId === host);
+                   if (!hostStillHere) {
+                       host = socket.id;
+                   }
+              }
+
+              // Update URL/Slug if missing
+              let videoUrl = r.videoUrl;
+              let movieSlug = r.movieSlug;
+              
+              if (!movieSlug && user.movieSlug) movieSlug = user.movieSlug;
+              if (!videoUrl && user.videoUrl) videoUrl = user.videoUrl;
+
+              return await tx.room.update({
+                  where: { roomId },
+                  data: {
+                      members,
+                      host,
+                      videoUrl,
+                      movieSlug,
+                      lastEmptyAt: null // Clear empty flag
                   }
-              }
-              
-              // 4. Claim Host only if current host is missing
-              if (user.userId && room.hostUserId === user.userId && room.host !== socket.id) {
-                  const hostStillHere = room.members.some(m => m.socketId === room.host);
-                  if (!hostStillHere) {
-                      room.host = socket.id;
-                      changed = true;
-                  }
-              }
-
-              // Update URL/Slug if missing (Restore from User if Room lost it)
-              if (!room.movieSlug && user.movieSlug) {
-                  room.movieSlug = user.movieSlug;
-                  changed = true;
-              }
-              
-              if (!room.videoUrl && user.videoUrl) {
-                  room.videoUrl = user.videoUrl;
-                  changed = true;
-              }
-
-              if (changed) {
-                  await room.save();
-              }
-              
-              const debugMsg = `Server: Join Success. Members: ${room.members.length}. Host: ${room.host}`;
-              console.log(debugMsg);
-              socket.emit('server-log', debugMsg);
-
-              // Emit Events
-              const isHost = room.host === socket.id;
-              socket.emit('room-joined', { 
-                  isHost, 
-                  videoUrl: room.videoUrl, 
-                  movieSlug: room.movieSlug,
-                  currentTime: room.currentTime || 0 // Send current time
               });
-              
-              socket.to(roomId).emit('user-joined', user);
-              
-              const memberList = room.members.map(m => ({
-                  id: m.socketId,
-                  username: m.username,
-                  isHost: m.socketId === room.host
-              }));
-              io.to(roomId).emit('member-list', memberList);
-              io.to(roomId).emit('room-size', room.members.length);
+          });
 
-              // Ask host to pause for sync when a new user joins
-              if (room.host && room.host !== socket.id) {
-                  io.to(room.host).emit('sync-pause', { requesterId: socket.id });
-              }
+          const debugMsg = `Server: Join Success. Members: ${room.members.length}. Host: ${room.host}`;
+          console.log(debugMsg);
+          socket.emit('server-log', debugMsg);
+
+          // Emit Events
+          const isHost = room.host === socket.id;
+          socket.emit('room-joined', { 
+              isHost, 
+              videoUrl: room.videoUrl, 
+              movieSlug: room.movieSlug,
+              currentTime: room.currentTime || 0
+          });
+          
+          socket.to(roomId).emit('user-joined', user);
+          
+          const memberList = (room.members || []).map(m => ({
+              id: m.socketId,
+              username: m.username,
+              isHost: m.socketId === room.host
+          }));
+          io.to(roomId).emit('member-list', memberList);
+          io.to(roomId).emit('room-size', (room.members || []).length);
+
+          if (room.host && room.host !== socket.id) {
+              io.to(room.host).emit('sync-pause', { requesterId: socket.id });
           }
 
       } catch (err) {
@@ -154,9 +175,18 @@ const initSocket = (server) => {
     socket.on('disconnect', async () => {
       console.log('Client disconnected:', socket.id);
       // Find rooms where this socket is a member
-      const rooms = await Room.find({ "members.socketId": socket.id });
-      for (const room of rooms) {
-          await handleLeaveRoom(io, socket, room.roomId);
+      // With JSON, we have to fetch all rooms and filter in code or simple raw query.
+      // For simplicity/safety: fetch all active rooms (usually small number) or optimize later.
+      // Better: fetch rooms where members string contains socket.id (hacky but works for JSON search if DB supports it)
+      // Prisma: findMany where members path ... not fully supported for array search in all providers consistently.
+      // Fallback: Fetch all rooms. (Inefficient for many rooms, but OK for now).
+      
+      const allRooms = await prisma.room.findMany();
+      for (const room of allRooms) {
+          const members = room.members || [];
+          if (members.some(m => m.socketId === socket.id)) {
+              await handleLeaveRoom(io, socket, room.roomId);
+          }
       }
     });
 
@@ -169,17 +199,11 @@ const initSocket = (server) => {
       try {
           socket.to(roomId).emit('player-state', state);
           
-          // Only update DB for significant events (URL change, Pause, etc.)
-          // Allow 'timeupdate' but throttle it (e.g. only every 10s per room approx)
-          // We don't have per-room state easily here without memory leak risk, 
-          // so we rely on client sending every 2s, and we check if time % 10 < 2
-          
           let shouldUpdateDB = false;
+          // Logic same as before: only update DB occasionally
           if (state.type !== 'timeupdate') {
               shouldUpdateDB = true;
           } else {
-             // Only save timeupdate if it's a multiple of ~10s (approx)
-             // state.time is float.
              if (state.time > 0 && Math.floor(state.time) % 10 === 0) {
                  shouldUpdateDB = true;
              }
@@ -187,39 +211,31 @@ const initSocket = (server) => {
 
           if (!shouldUpdateDB) return;
 
-          // Update room video URL and slug if provided
           const updateData = {};
-          
           if (state.url) {
-              console.log(`Room ${roomId} Video URL Update: ${state.url}`);
               updateData.videoUrl = state.url;
               if (state.slug) updateData.movieSlug = state.slug;
           }
-
-          if (state.type === 'play') {
-              updateData.isPlaying = true;
-          } else if (state.type === 'pause') {
-              updateData.isPlaying = false;
-          }
+          if (state.type === 'play') updateData.isPlaying = true;
+          else if (state.type === 'pause') updateData.isPlaying = false;
           
-          // Persist current time (only on pause/seek/url OR throttled timeupdate)
-          if (state.time > 0) {
-              updateData.currentTime = state.time;
-          }
+          if (state.time > 0) updateData.currentTime = state.time;
 
           if (Object.keys(updateData).length > 0) {
-               await Room.updateOne({ roomId }, updateData);
+               await prisma.room.update({
+                   where: { roomId },
+                   data: updateData
+               });
           }
       } catch (err) {
           console.error('Player state error:', err);
       }
     });
     
-    // Request current state (for new joiners)
+    // Request current state
     socket.on('request-sync', async (roomId) => {
-        const room = await Room.findOne({ roomId });
+        const room = await prisma.room.findUnique({ where: { roomId } });
         if (room) {
-            // Immediate fallback snapshot from DB
             if (room.videoUrl || room.currentTime) {
                 io.to(socket.id).emit('player-state', {
                     type: room.isPlaying ? 'play' : 'pause',
@@ -230,7 +246,6 @@ const initSocket = (server) => {
             }
         }
         if (room && room.host) {
-            // Priority: Ask Host
             const hostSocket = io.sockets.sockets.get(room.host);
             if (hostSocket && hostSocket.connected) {
                 io.to(room.host).emit('get-current-state', socket.id);
@@ -238,7 +253,6 @@ const initSocket = (server) => {
             }
         }
 
-        // Fallback: Ask any other client
         const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
         const otherClient = clients.find(id => id !== socket.id);
         if (otherClient) {
@@ -253,25 +267,29 @@ const initSocket = (server) => {
     // Host Controls
     socket.on('kick-member', async (roomId, targetSocketId) => {
         try {
-            const room = await Room.findOne({ roomId });
+            const room = await prisma.room.findUnique({ where: { roomId } });
             if (room && room.host === socket.id) {
-                // Remove from DB
-                await Room.updateOne({ roomId }, { $pull: { members: { socketId: targetSocketId } } });
-                
-                io.to(targetSocketId).emit('kicked-from-room');
-                io.sockets.sockets.get(targetSocketId)?.leave(roomId); // Force leave socket room
-                
-                // Update lists
-                const updatedRoom = await Room.findOne({ roomId });
-                 if (updatedRoom) {
-                     const memberList = updatedRoom.members.map(m => ({
+                let members = room.members || [];
+                const initialLength = members.length;
+                members = members.filter(m => m.socketId !== targetSocketId);
+
+                if (members.length !== initialLength) {
+                    await prisma.room.update({
+                        where: { roomId },
+                        data: { members }
+                    });
+                    
+                    io.to(targetSocketId).emit('kicked-from-room');
+                    io.sockets.sockets.get(targetSocketId)?.leave(roomId);
+
+                    const memberList = members.map(m => ({
                         id: m.socketId,
                         username: m.username,
-                        isHost: m.socketId === updatedRoom.host
-                     }));
-                     io.to(roomId).emit('member-list', memberList);
-                     io.to(roomId).emit('room-size', updatedRoom.members.length);
-                 }
+                        isHost: m.socketId === room.host
+                    }));
+                    io.to(roomId).emit('member-list', memberList);
+                    io.to(roomId).emit('room-size', members.length);
+                }
             }
         } catch (e) {
             console.error('Kick error:', e);
@@ -286,47 +304,63 @@ const initSocket = (server) => {
 // Helper to handle leaving
 async function handleLeaveRoom(io, socket, roomId) {
     try {
-        const room = await Room.findOne({ roomId });
-        if (!room) return;
+        // We need transaction to read-modify-write safely
+        await prisma.$transaction(async (tx) => {
+             const room = await tx.room.findUnique({ where: { roomId } });
+             if (!room) return;
 
-        // Remove member
-        await Room.updateOne({ roomId }, { $pull: { members: { socketId: socket.id } } });
-        
-        const updatedRoom = await Room.findOne({ roomId });
-        
-        socket.leave(roomId);
-        
-        // Find username from old room object
-        const leavingMember = room.members.find(m => m.socketId === socket.id);
-        if (leavingMember) {
-            socket.to(roomId).emit('user-left', { username: leavingMember.username });
-        }
+             let members = room.members || [];
+             const leavingMember = members.find(m => m.socketId === socket.id);
+             
+             if (!leavingMember) {
+                 // Member not found in DB list (maybe already removed), just ensure socket leaves
+                 socket.leave(roomId);
+                 return;
+             }
+             
+             // Remove member
+             members = members.filter(m => m.socketId !== socket.id);
+             
+             // Prepare update data
+             const updateData = { members };
+             
+             socket.leave(roomId);
+             socket.to(roomId).emit('user-left', { username: leavingMember.username });
 
-        if (!updatedRoom || updatedRoom.members.length === 0) {
-            // Empty room -> Mark for deletion (don't delete immediately to allow refresh)
-            await Room.updateOne({ roomId }, { lastEmptyAt: new Date() });
-            console.log(`Room ${roomId} is empty, marked for cleanup in 1 min`);
-        } else {
-             // Room not empty, clear lastEmptyAt
-             await Room.updateOne({ roomId }, { lastEmptyAt: null });
-
-             // If host left, assign new host
-             if (room.host === socket.id) {
-                 const newHost = updatedRoom.members[0]; // First remaining
-                 updatedRoom.host = newHost.socketId;
-                 await updatedRoom.save();
-                 io.to(newHost.socketId).emit('promoted-to-host');
+             if (members.length === 0) {
+                 updateData.lastEmptyAt = new Date();
+                 console.log(`Room ${roomId} is empty, marked for cleanup`);
+             } else {
+                 updateData.lastEmptyAt = null;
+                 // Host reassignment
+                 if (room.host === socket.id) {
+                     const newHost = members[0];
+                     updateData.host = newHost.socketId;
+                     // We can't emit inside transaction easily effectively if we want to ensure DB save first,
+                     // but we can try.
+                 }
              }
 
-             // Update member list
-             const memberList = updatedRoom.members.map(m => ({
-                  id: m.socketId,
-                  username: m.username,
-                  isHost: m.socketId === updatedRoom.host
-             }));
-             io.to(roomId).emit('member-list', memberList);
-             io.to(roomId).emit('room-size', updatedRoom.members.length);
-        }
+             const updatedRoom = await tx.room.update({
+                 where: { roomId },
+                 data: updateData
+             });
+
+             // Post-update emits
+             if (updatedRoom.members.length > 0) {
+                 if (room.host === socket.id) { // If host changed
+                      io.to(updatedRoom.host).emit('promoted-to-host');
+                 }
+                 
+                 const memberList = updatedRoom.members.map(m => ({
+                      id: m.socketId,
+                      username: m.username,
+                      isHost: m.socketId === updatedRoom.host
+                 }));
+                 io.to(roomId).emit('member-list', memberList);
+                 io.to(roomId).emit('room-size', updatedRoom.members.length);
+             }
+        });
 
     } catch (e) {
         console.error('Leave room error:', e);

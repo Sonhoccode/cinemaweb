@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -70,8 +71,6 @@ model Room {
   currentTime Int      @default(0)
   isPlaying   Boolean  @default(false)
   lastEmptyAt DateTime?
+  members     Json     @default("[]") // Store members as JSON array
   createdAt   DateTime @default(now())
-  // Members are transient in socket, typically not stored in relational DB permanently unless needed.
-  // We can store active members in a separate table or just use Redis/Memory. 
-  // For consistency with Mongo model, we'll keep it simple or omit if strictly socket-managed.
 }
