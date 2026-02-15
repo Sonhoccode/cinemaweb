@@ -15,7 +15,15 @@ function EpisodeList({ episodes, currentEpisode, onEpisodeSelect, watchedEpisode
     <div className="mt-2 text-white">
       <div className={containerClass}>
         {episodes.map((episode, index) => {
-            const isWatched = watchedEpisodes?.includes(episode.slug || episode.name);
+            // Robust check: match slug OR name, handling both string array (legacy) and object array
+            const isWatched = Array.isArray(watchedEpisodes) && watchedEpisodes.some(w => {
+                if (typeof w === 'string') return w === (episode.slug || episode.name); 
+                if (typeof w === 'object' && w !== null) {
+                     return (episode.slug && w.episodeSlug === episode.slug) || (w.episodeName === episode.name);
+                }
+                return false;
+            });
+
             const isCurrent = index === currentEpisode;
             
             // Base classes for all buttons

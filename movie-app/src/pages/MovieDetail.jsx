@@ -95,7 +95,7 @@ function MovieDetail() {
         });
         const history = await response.json();
         const movieHistory = history.filter(h => h.movieSlug === slug);
-        setWatchedEpisodes(movieHistory.map(h => h.episodeSlug || h.episodeName));
+        setWatchedEpisodes(movieHistory);
     } catch (error) {
         console.error("Failed to fetch history", error);
     }

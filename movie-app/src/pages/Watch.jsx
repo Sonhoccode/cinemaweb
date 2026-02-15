@@ -109,8 +109,8 @@ function Watch() {
         const history = await response.json();
         const movieHistory = history.filter(h => h.movieSlug === movie.slug);
         
-        const watchedSlugs = movieHistory.map(h => h.episodeSlug || h.episodeName);
-        setWatchedEpisodes(watchedSlugs);
+        // Store full history objects for robust matching
+        setWatchedEpisodes(movieHistory);
 
         // Resume Logic
         if (!initialLoadDone) {
@@ -126,14 +126,18 @@ function Watch() {
             } else if (location.state?.episodeIndex !== undefined) {
                 // Priority 2: Navigation State (from Detail Page)
                 setCurrentEpisode(location.state.episodeIndex);
-            } else if (watchedSlugs.length > 0) {
+            } else if (movieHistory.length > 0) {
                 // Priority 3: Auto-resume from History
                 const serverData = movie.episodes?.[0]?.server_data || [];
                 let maxIndex = 0;
                 
                 serverData.forEach((ep, index) => {
-                    const epSlug = ep.slug || ep.name;
-                    if (watchedSlugs.includes(epSlug)) {
+                    // Check if this episode is in history
+                    const isWatched = movieHistory.some(h => 
+                        (ep.slug && h.episodeSlug === ep.slug) || (h.episodeName === ep.name)
+                    );
+                    
+                    if (isWatched) {
                         maxIndex = index;
                     }
                 });
@@ -390,6 +394,7 @@ function Watch() {
           </div>
         </div>
 
+        {/* Comment Section - Moved to bottom for mobile layout per user request */}
         <div className="mt-8">
            <CommentSection 
               movieSlug={slug} 
