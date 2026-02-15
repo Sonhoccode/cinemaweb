@@ -7,7 +7,7 @@ const initSocket = require('./config/socket');
 
 dotenv.config();
 
-connectDB();
+
 
 const app = express();
 const server = http.createServer(app);
@@ -37,7 +37,19 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 8080;
 
-// Initialize Socket.io
-const io = initSocket(server);
+const startServer = async () => {
+  try {
+    await connectDB();
+    
+    // Initialize Socket.io after DB is connected
+    const io = initSocket(server);
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+    server.listen(PORT, '0.0.0.0', () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+  } catch (err) {
+    console.error('Failed to connect to DB', err);
+    process.exit(1);
+  }
+};
+
+startServer();
+
