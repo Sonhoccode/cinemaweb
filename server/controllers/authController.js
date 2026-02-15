@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
-const User = require('../models/User');
+const { prisma } = require('../config/db');
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -15,7 +15,14 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // Check if user exists
-  const userExists = await User.findOne({ email });
+  const userExists = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email },
+        { username }
+      ]
+    }
+  });
 
   if (userExists) {
     res.status(400);
@@ -27,10 +34,12 @@ const registerUser = asyncHandler(async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, salt);
 
   // Create user
-  const user = await User.create({
-    username,
-    email,
-    password: hashedPassword,
+  const user = await prisma.user.create({
+    data: {
+      username,
+      email,
+      password: hashedPassword,
+    },
   });
 
   if (user) {
@@ -38,7 +47,7 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user.id,
       username: user.username,
       email: user.email,
-      token: generateToken(user._id),
+      token: generateToken(user.id),
     });
   } else {
     res.status(400);
@@ -51,16 +60,23 @@ const registerUser = asyncHandler(async (req, res) => {
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  
+  if (!email || !password) {
+      res.status(400);
+      throw new Error('Please add email and password');
+  }
 
   // Check for user email
-  const user = await User.findOne({ email });
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
   if (user && (await bcrypt.compare(password, user.password))) {
     res.json({
       _id: user.id,
       username: user.username,
       email: user.email,
-      token: generateToken(user._id),
+      token: generateToken(user.id),
     });
   } else {
     res.status(400);
@@ -72,7 +88,16 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
-  res.status(200).json(req.user);
+  const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true
+      }
+  });
+  res.status(200).json(user);
 });
 
 // Generate JWT

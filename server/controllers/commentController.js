@@ -1,5 +1,5 @@
-const Comment = require('../models/Comment');
-const User = require('../models/User');
+const asyncHandler = require('express-async-handler'); // Ensure consistent error handling
+const { prisma } = require('../config/db');
 
 // @desc    Get comments for a specific episode
 // @route   GET /api/comments/:movieSlug/:episodeSlug
@@ -8,14 +8,18 @@ const getComments = async (req, res) => {
   try {
     const { movieSlug, episodeSlug } = req.params;
     
-    let query = { movieSlug };
+    let whereClause = { movieSlug };
     if (episodeSlug !== 'all') {
-        query.episodeSlug = episodeSlug;
+        whereClause.episodeSlug = episodeSlug;
     }
 
-    const comments = await Comment.find(query)
-      .populate('user', 'username') // Only get username
-      .sort({ createdAt: -1 }); // Newest first
+    const comments = await prisma.comment.findMany({
+      where: whereClause,
+      include: {
+        user: { select: { username: true } } // Relation include
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json(comments);
   } catch (error) {
@@ -35,17 +39,19 @@ const addComment = async (req, res) => {
       throw new Error('Please add content');
     }
 
-    const comment = await Comment.create({
-      user: req.user.id,
-      movieSlug,
-      episodeSlug,
-      content,
+    const comment = await prisma.comment.create({
+      data: {
+        userId: req.user.id,
+        movieSlug,
+        episodeSlug,
+        content,
+      },
+      include: {
+        user: { select: { username: true } }
+      }
     });
 
-    // Populate user info immediately for frontend display
-    const populatedComment = await Comment.findById(comment._id).populate('user', 'username');
-
-    res.status(201).json(populatedComment);
+    res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -56,7 +62,9 @@ const addComment = async (req, res) => {
 // @access  Private
 const deleteComment = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.id);
+    const comment = await prisma.comment.findUnique({
+      where: { id: req.params.id }
+    });
 
     if (!comment) {
       res.status(404);
@@ -64,12 +72,14 @@ const deleteComment = async (req, res) => {
     }
 
     // Check user ownership
-    if (comment.user.toString() !== req.user.id) {
+    if (comment.userId !== req.user.id) {
       res.status(401);
       throw new Error('User not authorized');
     }
 
-    await comment.deleteOne();
+    await prisma.comment.delete({
+      where: { id: req.params.id }
+    });
 
     res.json({ id: req.params.id });
   } catch (error) {

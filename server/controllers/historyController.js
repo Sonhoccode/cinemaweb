@@ -1,12 +1,13 @@
 const asyncHandler = require('express-async-handler');
-const WatchHistory = require('../models/WatchHistory');
+const { prisma } = require('../config/db');
 
 // @desc    Get user watch history
 // @route   GET /api/history
 // @access  Private
 const getHistory = asyncHandler(async (req, res) => {
-  const history = await WatchHistory.find({ user: req.user.id }).sort({
-    lastWatched: -1,
+  const history = await prisma.watchHistory.findMany({
+    where: { userId: req.user.id },
+    orderBy: { lastWatched: 'desc' },
   });
   res.status(200).json(history);
 });
@@ -30,28 +31,25 @@ const updateHistory = asyncHandler(async (req, res) => {
     throw new Error('Missing required fields');
   }
 
-  // Check if history exists for this episode
-  let history = await WatchHistory.findOne({
-    user: req.user.id,
-    movieSlug,
-    episodeSlug,
-  });
-
-  if (history) {
-    // Update existing history
-    history.episodeSlug = episodeSlug;
-    history.episodeName = episodeName;
-    history.progress = progress;
-    history.duration = duration;
-    if (posterUrl) {
-      history.posterUrl = posterUrl;
-    }
-    history.lastWatched = Date.now();
-    await history.save();
-  } else {
-    // Create new history
-    history = await WatchHistory.create({
-      user: req.user.id,
+  // Upsert history
+  // Using compound unique constraint on [userId, movieSlug, episodeSlug]
+  const history = await prisma.watchHistory.upsert({
+    where: {
+      userId_movieSlug_episodeSlug: {
+        userId: req.user.id,
+        movieSlug,
+        episodeSlug,
+      },
+    },
+    update: {
+      episodeName,
+      progress,
+      duration,
+      posterUrl: posterUrl || undefined, // Only update if provided
+      lastWatched: new Date(),
+    },
+    create: {
+      userId: req.user.id,
       movieSlug,
       movieName,
       posterUrl: posterUrl || null,
@@ -59,8 +57,8 @@ const updateHistory = asyncHandler(async (req, res) => {
       episodeName,
       progress,
       duration,
-    });
-  }
+    },
+  });
 
   res.status(200).json(history);
 });
@@ -69,17 +67,19 @@ const updateHistory = asyncHandler(async (req, res) => {
 // @route   DELETE /api/history/:slug
 // @access  Private
 const deleteHistory = asyncHandler(async (req, res) => {
-  const history = await WatchHistory.findOne({
-    user: req.user.id,
-    movieSlug: req.params.slug,
+  // Delete all history for this movie slug for the user
+  // (Assuming frontend deletes by movie slug, meaning all episodes)
+  const result = await prisma.watchHistory.deleteMany({
+    where: {
+      userId: req.user.id,
+      movieSlug: req.params.slug,
+    },
   });
 
-  if (!history) {
+  if (result.count === 0) {
     res.status(404);
     throw new Error('History not found');
   }
-
-  await history.remove();
 
   res.status(200).json({ id: req.params.slug });
 });

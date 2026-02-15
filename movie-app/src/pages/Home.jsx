@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import MovieGrid from '../components/movie/MovieGrid';
+import HotMovies from '../components/movie/HotMovies';
 import Pagination from '../components/common/Pagination';
 import { LoadingSkeleton } from '../components/common/Loading';
 import { SHOW_ROOM_FEATURES } from '../config/features';
@@ -172,6 +173,8 @@ function Home() {
       </div>
 
       <div className="container pb-16">
+        <HotMovies />
+        
         <div className="flex flex-wrap gap-3 mb-8">
           {filters.map((filter) => (
             <button

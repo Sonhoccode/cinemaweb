@@ -1,4 +1,4 @@
-const Rating = require('../models/Rating');
+const { prisma } = require('../config/db');
 
 // @desc    Get rating for a movie
 // @route   GET /api/ratings/:movieSlug
@@ -7,20 +7,17 @@ const getMovieRating = async (req, res) => {
   try {
     const { movieSlug } = req.params;
     
-    const ratings = await Rating.find({ movieSlug });
+    // Aggregation in Prisma
+    const aggregations = await prisma.rating.aggregate({
+      _avg: { score: true },
+      _count: { score: true },
+      where: { movieSlug }
+    });
     
-    if (ratings.length === 0) {
-        return res.json({ average: 0, count: 0, userRating: 0 });
-    }
+    const count = aggregations._count.score;
+    const average = aggregations._avg.score || 0;
 
-    const sum = ratings.reduce((acc, r) => acc + r.score, 0);
-    const average = (sum / ratings.length).toFixed(1);
-
-    // Check if current user has rated (if logged in handled by separate call or middleware? 
-    // Usually easier to separate specific user rating fetch, but for simplicity let's return generic data here)
-    // We will fetch user-specific rating in a separate endpoint or conditionally if req.user exists (optional auth)
-
-    res.json({ average: parseFloat(average), count: ratings.length });
+    res.json({ average: parseFloat(average.toFixed(1)), count });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -32,7 +29,14 @@ const getMovieRating = async (req, res) => {
 const getUserRating = async (req, res) => {
     try {
         const { movieSlug } = req.params;
-        const rating = await Rating.findOne({ movieSlug, user: req.user.id });
+        const rating = await prisma.rating.findUnique({
+            where: {
+                userId_movieSlug: {
+                    userId: req.user.id,
+                    movieSlug
+                }
+            }
+        });
         res.json({ score: rating ? rating.score : 0 });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -51,11 +55,20 @@ const rateMovie = async (req, res) => {
       throw new Error('Invalid score (1-10)');
     }
 
-    const rating = await Rating.findOneAndUpdate(
-      { user: req.user.id, movieSlug },
-      { score },
-      { new: true, upsert: true } // Create if not exists, update if exists
-    );
+    const rating = await prisma.rating.upsert({
+        where: {
+            userId_movieSlug: {
+                userId: req.user.id,
+                movieSlug
+            }
+        },
+        update: { score },
+        create: {
+            userId: req.user.id,
+            movieSlug,
+            score
+        }
+    });
 
     res.json(rating);
   } catch (error) {
