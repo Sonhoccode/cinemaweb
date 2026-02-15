@@ -1,0 +1,1065 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Xem phim online chất lượng cao - Phim mới cập nhật hàng ngày"
+    />
+    <title>CineStream - Xem Phim Online Miễn Phí</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+      :root {
+        --bg-primary: #0a0e1a;
+        --bg-secondary: #121829;
+        --bg-card: rgba(20, 26, 42, 0.6);
+        --bg-card-hover: rgba(30, 36, 52, 0.8);
+        --accent-1: #00d9ff;
+        --accent-2: #ff006e;
+        --accent-gradient: linear-gradient(
+          135deg,
+          #00d9ff 0%,
+          #0099ff 50%,
+          #ff006e 100%
+        );
+        --text-primary: #ffffff;
+        --text-secondary: #94a3b8;
+        --border-color: rgba(148, 163, 184, 0.1);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+        --shadow-glow: 0 0 30px rgba(0, 217, 255, 0.3);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      /* Background Effects */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+          radial-gradient(
+            circle at 20% 30%,
+            rgba(0, 217, 255, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 70%,
+            rgba(255, 0, 110, 0.1) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Header */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(10, 14, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--shadow-md);
+      }
+
+      nav {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.2rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+      }
+
+      .logo {
+        font-size: 1.8rem;
+        font-weight: 800;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.5px;
+        text-shadow: var(--shadow-glow);
+      }
+
+      .search-container {
+        flex: 1;
+        max-width: 600px;
+        position: relative;
+      }
+
+      .search-box {
+        width: 100%;
+        padding: 0.9rem 1.2rem 0.9rem 3.2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+      }
+
+      .search-box:focus {
+        background: var(--bg-secondary);
+        border-color: var(--accent-1);
+        box-shadow:
+          0 0 0 3px rgba(0, 217, 255, 0.1),
+          var(--shadow-glow);
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1.2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        pointer-events: none;
+      }
+
+      /* Main Container */
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      /* Hero Section */
+      .hero {
+        margin-bottom: 3rem;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        height: 500px;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 217, 255, 0.1) 0%,
+          rgba(255, 0, 110, 0.1) 100%
+        );
+        border: 1px solid var(--border-color);
+      }
+
+      .hero-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 3rem;
+        background: linear-gradient(
+          to top,
+          rgba(10, 14, 26, 0.95) 0%,
+          transparent 100%
+        );
+      }
+
+      .hero-title {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+      }
+
+      .hero-desc {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        max-width: 600px;
+      }
+
+      .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 0.9rem 2rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: var(--accent-gradient);
+        color: white;
+        box-shadow: var(--shadow-glow);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 40px rgba(0, 217, 255, 0.5);
+      }
+
+      .btn-secondary {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+      }
+
+      .btn-secondary:hover {
+        background: var(--bg-card-hover);
+        border-color: var(--accent-1);
+      }
+
+      /* Filters */
+      .filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .filter-btn {
+        padding: 0.7rem 1.5rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .filter-btn:hover,
+      .filter-btn.active {
+        background: var(--accent-gradient);
+        color: white;
+        border-color: transparent;
+        transform: translateY(-2px);
+      }
+
+      /* Section Title */
+      .section-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+
+      .section-title::before {
+        content: "";
+        width: 4px;
+        height: 28px;
+        background: var(--accent-gradient);
+        border-radius: 2px;
+      }
+
+      /* Movie Grid */
+      .movie-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+      }
+
+      .movie-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        backdrop-filter: blur(10px);
+      }
+
+      .movie-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        border-color: var(--accent-1);
+        box-shadow: var(--shadow-lg), var(--shadow-glow);
+        background: var(--bg-card-hover);
+      }
+
+      .movie-poster {
+        width: 100%;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 217, 255, 0.2) 0%,
+          rgba(255, 0, 110, 0.2) 100%
+        );
+      }
+
+      .movie-info {
+        padding: 1rem;
+      }
+
+      .movie-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.4;
+      }
+
+      .movie-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .movie-year {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .movie-quality {
+        padding: 0.25rem 0.6rem;
+        background: var(--accent-gradient);
+        color: white;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      /* Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        animation: fadeIn 0.3s ease;
+      }
+
+      .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-content {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        max-width: 1200px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(40px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-close {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+      }
+
+      .modal-close:hover {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+        color: white;
+        transform: rotate(90deg);
+      }
+
+      .modal-body {
+        padding: 2rem;
+      }
+
+      .video-player {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+      }
+
+      #videoElement {
+        width: 100%;
+        height: 100%;
+        outline: none;
+      }
+
+      .episode-list {
+        margin-top: 1.5rem;
+      }
+
+      .episode-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.8rem;
+        margin-top: 1rem;
+      }
+
+      .episode-btn {
+        padding: 0.8rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+      }
+
+      .episode-btn:hover,
+      .episode-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: white;
+      }
+
+      /* Loading */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--accent-1);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 1rem;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Pagination */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .page-btn {
+        padding: 0.8rem 1.2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        min-width: 44px;
+      }
+
+      .page-btn:hover,
+      .page-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: white;
+      }
+
+      .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        nav {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .search-container {
+          max-width: 100%;
+        }
+
+        .hero {
+          height: 400px;
+        }
+
+        .hero-title {
+          font-size: 2rem;
+        }
+
+        .movie-grid {
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 1rem;
+        }
+
+        .modal-content {
+          width: 98%;
+        }
+
+        .modal-body {
+          padding: 1rem;
+        }
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 12px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--bg-primary);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--bg-card);
+        border-radius: 6px;
+        border: 2px solid var(--bg-primary);
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-1);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo">CineStream</div>
+        <div class="search-container">
+          <svg
+            class="search-icon"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input
+            type="text"
+            class="search-box"
+            id="searchInput"
+            placeholder="Tìm kiếm phim, diễn viên, đạo diễn..."
+          />
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="heroSection">
+        <div class="hero-content">
+          <h1 class="hero-title">Khám phá thế giới điện ảnh</h1>
+          <p class="hero-desc">
+            Hàng ngàn bộ phim chất lượng cao, cập nhật liên tục. Trải nghiệm xem
+            phim tốt nhất với chất lượng HD.
+          </p>
+          <div class="hero-buttons">
+            <button class="btn btn-primary" onclick="scrollToMovies()">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Xem Ngay
+            </button>
+            <button class="btn btn-secondary">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Thông Tin
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="filters" id="filterContainer">
+        <button class="filter-btn active" data-filter="all">Tất cả</button>
+        <button class="filter-btn" data-filter="phim-le">Phim Lẻ</button>
+        <button class="filter-btn" data-filter="phim-bo">Phim Bộ</button>
+        <button class="filter-btn" data-filter="hoat-hinh">Hoạt Hình</button>
+        <button class="filter-btn" data-filter="tv-shows">TV Shows</button>
+      </div>
+
+      <h2 class="section-title">Phim Mới Cập Nhật</h2>
+      <div class="movie-grid" id="movieGrid"></div>
+
+      <div class="pagination" id="pagination"></div>
+    </main>
+
+    <!-- Video Modal -->
+    <div class="modal" id="videoModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Chi tiết phim</h3>
+          <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="video-player">
+            <video id="videoElement" controls></video>
+          </div>
+          <div id="movieDetails"></div>
+          <div class="episode-list" id="episodeList"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "https://phimapi.com";
+      const IMAGE_PROXY = "https://phimapi.com/image.php?url=";
+      let currentPage = 1;
+      let currentFilter = "phim-moi-cap-nhat";
+      let searchTimeout;
+      let hls;
+      let currentMovie;
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        loadMovies();
+        setupEventListeners();
+      });
+
+      function setupEventListeners() {
+        // Search
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+              if (e.target.value.trim()) {
+                searchMovies(e.target.value.trim());
+              } else {
+                loadMovies();
+              }
+            }, 500);
+          });
+
+        // Filters
+        document.querySelectorAll(".filter-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            document
+              .querySelectorAll(".filter-btn")
+              .forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const filter = btn.dataset.filter;
+            currentFilter = filter === "all" ? "phim-moi-cap-nhat" : filter;
+            currentPage = 1;
+            loadMovies();
+          });
+        });
+
+        // Close modal on backdrop click
+        document.getElementById("videoModal").addEventListener("click", (e) => {
+          if (e.target.id === "videoModal") {
+            closeModal();
+          }
+        });
+      }
+
+      async function loadMovies() {
+        showLoading();
+
+        try {
+          const endpoint =
+            currentFilter === "phim-moi-cap-nhat"
+              ? `/danh-sach/${currentFilter}?page=${currentPage}`
+              : `/v1/api/danh-sach/${currentFilter}?page=${currentPage}`;
+
+          const response = await fetch(API_BASE + endpoint);
+          const data = await response.json();
+
+          if (data.status === "success" || data.data) {
+            const movies = data.data?.items || data.items || [];
+            displayMovies(movies);
+
+            const totalPages =
+              data.data?.params?.pagination?.totalPages ||
+              data.pagination?.totalPages ||
+              50;
+            displayPagination(totalPages);
+          }
+        } catch (error) {
+          console.error("Error loading movies:", error);
+          document.getElementById("movieGrid").innerHTML =
+            '<div class="loading">Không thể tải phim. Vui lòng thử lại sau.</div>';
+        }
+      }
+
+      async function searchMovies(keyword) {
+        showLoading();
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}`,
+          );
+          const data = await response.json();
+
+          if (data.status === "success" && data.data?.items) {
+            displayMovies(data.data.items);
+
+            const totalPages = data.data.params?.pagination?.totalPages || 1;
+            displayPagination(totalPages);
+          } else {
+            document.getElementById("movieGrid").innerHTML =
+              '<div class="loading">Không tìm thấy kết quả phù hợp.</div>';
+          }
+        } catch (error) {
+          console.error("Error searching movies:", error);
+        }
+      }
+
+      function displayMovies(movies) {
+        const grid = document.getElementById("movieGrid");
+
+        if (!movies || movies.length === 0) {
+          grid.innerHTML = '<div class="loading">Không có phim nào.</div>';
+          return;
+        }
+
+        grid.innerHTML = movies
+          .map((movie) => {
+            const poster = movie.poster_url || movie.thumb_url || "";
+            const posterUrl = poster
+              ? IMAGE_PROXY + encodeURIComponent(poster)
+              : "";
+            const quality = movie.quality || movie.lang || "HD";
+
+            return `
+                    <div class="movie-card" onclick="openMovie('${movie.slug}')">
+                        <img class="movie-poster" 
+                             src="${posterUrl}" 
+                             alt="${movie.name}"
+                             loading="lazy"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22220%22 height=%22330%22%3E%3Crect fill=%22%23141a2a%22 width=%22220%22 height=%22330%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-family=%22sans-serif%22 font-size=%2216%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                        <div class="movie-info">
+                            <div class="movie-title">${movie.name}</div>
+                            <div class="movie-meta">
+                                <span class="movie-year">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    ${movie.year || "N/A"}
+                                </span>
+                                <span class="movie-quality">${quality}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      function displayPagination(totalPages) {
+        const pagination = document.getElementById("pagination");
+        const maxVisible = 7;
+        let pages = [];
+
+        if (totalPages <= maxVisible) {
+          pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        } else {
+          if (currentPage <= 4) {
+            pages = [1, 2, 3, 4, 5, "...", totalPages];
+          } else if (currentPage >= totalPages - 3) {
+            pages = [
+              1,
+              "...",
+              totalPages - 4,
+              totalPages - 3,
+              totalPages - 2,
+              totalPages - 1,
+              totalPages,
+            ];
+          } else {
+            pages = [
+              1,
+              "...",
+              currentPage - 1,
+              currentPage,
+              currentPage + 1,
+              "...",
+              totalPages,
+            ];
+          }
+        }
+
+        pagination.innerHTML = `
+                <button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>
+                    ‹
+                </button>
+                ${pages
+                  .map((page) =>
+                    page === "..."
+                      ? '<span class="page-btn" style="cursor: default;">...</span>'
+                      : `<button class="page-btn ${page === currentPage ? "active" : ""}" onclick="changePage(${page})">${page}</button>`,
+                  )
+                  .join("")}
+                <button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>
+                    ›
+                </button>
+            `;
+      }
+
+      function changePage(page) {
+        if (page < 1) return;
+        currentPage = page;
+        loadMovies();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      async function openMovie(slug) {
+        try {
+          const response = await fetch(`${API_BASE}/phim/${slug}`);
+          const data = await response.json();
+
+          if (data.status === "success" && data.movie) {
+            currentMovie = data.movie;
+            showMovieModal(data.movie);
+          }
+        } catch (error) {
+          console.error("Error loading movie details:", error);
+          alert("Không thể tải thông tin phim. Vui lòng thử lại.");
+        }
+      }
+
+      function showMovieModal(movie) {
+        document.getElementById("modalTitle").textContent = movie.name;
+
+        // Movie details
+        const details = `
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="color: var(--text-secondary); line-height: 1.8;">
+                        <strong>Tên gốc:</strong> ${movie.origin_name}<br>
+                        <strong>Thể loại:</strong> ${movie.category?.map((c) => c.name).join(", ") || "N/A"}<br>
+                        <strong>Quốc gia:</strong> ${movie.country?.map((c) => c.name).join(", ") || "N/A"}<br>
+                        <strong>Năm:</strong> ${movie.year || "N/A"}<br>
+                        <strong>Trạng thái:</strong> ${movie.episode_current || "N/A"}
+                    </p>
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">${movie.content || "Chưa có mô tả"}</p>
+                </div>
+            `;
+        document.getElementById("movieDetails").innerHTML = details;
+
+        // Episodes
+        if (movie.episodes && movie.episodes.length > 0) {
+          const firstServer = movie.episodes[0];
+          if (firstServer.server_data && firstServer.server_data.length > 0) {
+            const episodes = `
+                        <h4 style="margin-bottom: 1rem;">Danh sách tập phim</h4>
+                        <div class="episode-grid">
+                            ${firstServer.server_data
+                              .map(
+                                (ep, idx) => `
+                                <button class="episode-btn ${idx === 0 ? "active" : ""}" 
+                                        onclick="playEpisode('${ep.link_m3u8}', ${idx})">
+                                    ${ep.name}
+                                </button>
+                            `,
+                              )
+                              .join("")}
+                        </div>
+                    `;
+            document.getElementById("episodeList").innerHTML = episodes;
+
+            // Auto play first episode
+            playEpisode(firstServer.server_data[0].link_m3u8, 0);
+          } else {
+            document.getElementById("episodeList").innerHTML =
+              '<p style="color: var(--text-secondary);">Chưa có tập phim nào.</p>';
+          }
+        }
+
+        document.getElementById("videoModal").classList.add("active");
+      }
+
+      function playEpisode(m3u8Url, index) {
+        const video = document.getElementById("videoElement");
+
+        // Update active episode button
+        document.querySelectorAll(".episode-btn").forEach((btn, idx) => {
+          btn.classList.toggle("active", idx === index);
+        });
+
+        if (Hls.isSupported()) {
+          if (hls) {
+            hls.destroy();
+          }
+
+          hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+          });
+
+          hls.loadSource(m3u8Url);
+          hls.attachMedia(video);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play();
+          });
+
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error("HLS Error:", data);
+            if (data.fatal) {
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  console.log("Network error, trying to recover...");
+                  hls.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  console.log("Media error, trying to recover...");
+                  hls.recoverMediaError();
+                  break;
+                default:
+                  alert("Không thể phát video. Vui lòng thử lại.");
+                  break;
+              }
+            }
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          // Native HLS support (Safari)
+          video.src = m3u8Url;
+          video.addEventListener("loadedmetadata", () => {
+            video.play();
+          });
+        } else {
+          alert("Trình duyệt không hỗ trợ phát video HLS.");
+        }
+      }
+
+      function closeModal() {
+        document.getElementById("videoModal").classList.remove("active");
+
+        // Stop video
+        const video = document.getElementById("videoElement");
+        video.pause();
+        video.src = "";
+
+        if (hls) {
+          hls.destroy();
+          hls = null;
+        }
+      }
+
+      function showLoading() {
+        document.getElementById("movieGrid").innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Đang tải...
+                </div>
+            `;
+      }
+
+      function scrollToMovies() {
+        document
+          .querySelector(".movie-grid")
+          .scrollIntoView({ behavior: "smooth" });
+      }
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+        }
+      });
+    </script>
+  </body>
+</html>
