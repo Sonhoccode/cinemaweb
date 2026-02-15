@@ -135,16 +135,8 @@ function Home() {
         </div>
       )}
       
-      <div className="relative mb-8 py-16 border-b border-gray-800 bg-gray-900">
+      <div className="relative py-10 border-b border-gray-800 bg-gray-900">
         <div className="container text-center">
-          <h1 className="text-4xl text-white md:text-5xl font-extrabold mt-6 mb-4 py-6">
-            {t('home.heroTitle')}
-          </h1>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            {t('home.heroSubtitle1')} 
-            {' '}
-            {t('home.heroSubtitle2')}
-          </p>
           
           {SHOW_ROOM_FEATURES && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -172,8 +164,9 @@ function Home() {
         </div>
       </div>
 
+      <HotMovies />
+
       <div className="container pb-16">
-        <HotMovies />
         
         <div className="flex flex-wrap gap-3 mb-8">
           {filters.map((filter) => (

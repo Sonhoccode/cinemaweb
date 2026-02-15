@@ -13,6 +13,10 @@ export const translations = {
       login: 'Đăng nhập',
       register: 'Đăng ký'
     },
+    common: {
+      watchNow: 'Xem Ngay',
+      next: 'Tiếp theo'
+    },
     search: {
       placeholder: 'Tìm kiếm phim...',
       resultsFor: 'Kết quả tìm kiếm cho:',
@@ -221,6 +225,10 @@ export const translations = {
       logout: 'Log out',
       login: 'Log in',
       register: 'Sign up'
+    },
+    common: {
+      watchNow: 'Watch Now',
+      next: 'Next'
     },
     search: {
       placeholder: 'Search movies...',
