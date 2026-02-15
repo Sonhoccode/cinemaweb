@@ -306,11 +306,7 @@ function Watch() {
               )}
             </div>
 
-            {/* Comment Section */}
-            <CommentSection 
-              movieSlug={slug} 
-              episodeSlug={serverData[currentEpisode]?.slug || `tap-${currentEpisode + 1}`} 
-            />
+
           </div>
 
           {/* Sidebar: Episodes & Info */}
@@ -392,6 +388,13 @@ function Watch() {
                </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-8">
+           <CommentSection 
+              movieSlug={slug} 
+              episodeSlug={serverData[currentEpisode]?.slug || `tap-${currentEpisode + 1}`} 
+            />
         </div>
       </div>
     </div>
