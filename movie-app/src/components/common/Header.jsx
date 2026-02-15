@@ -56,14 +56,61 @@ function Header() {
                 {children}
               </div>
           </div>
+  
+  // Data for menus
+  const [categories, setCategories] = useState([]);
+  const [countries, setCountries] = useState([]);
+  
+  // Years list (2026 -> 2010)
+  const years = Array.from({ length: 2026 - 2009 }, (_, i) => 2026 - i);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    // Fetch filter data
+    const fetchData = async () => {
+        try {
+            const [cats, counts] = await Promise.all([
+                api.getCategories(),
+                api.getCountries()
+            ]);
+            setCategories(cats || []);
+            setCountries(counts || []);
+        } catch (e) {
+            console.error("Header data fetch error", e);
+        }
+    };
+    fetchData();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const NavItem = ({ title, children }) => (
+      <div className="relative group px-3 py-2">
+          <button className="text-gray-300 hover:text-white font-medium flex items-center gap-1 transition-colors">
+              {title}
+              <svg className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+          </button>
+          <div className="absolute left-0 mt-2 w-48 bg-primary-lighter rounded-xl shadow-2xl border border-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left z-50 overflow-hidden">
+              <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                {children}
+              </div>
+          </div>
       </div>
   );
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-primary-dark shadow-md py-3' : 'bg-transparent py-5'}`}>
       <nav className="container flex items-center justify-between gap-4">
-        <Link to="/" className="text-2xl font-bold text-white shrink-0 mr-4">
-          NosCinema
+        <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-white shrink-0 mr-4">
+          <img src="/logo.svg" alt="NosCinema" className="w-8 h-8 rounded-lg" />
+          <span className="hidden sm:inline">NosCinema</span>
         </Link>
         
         {/* Desktop Navigation */}
