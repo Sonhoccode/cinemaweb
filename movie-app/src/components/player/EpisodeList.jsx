@@ -15,13 +15,11 @@ function EpisodeList({ episodes, currentEpisode, onEpisodeSelect, watchedEpisode
     <div className="mt-2 text-white">
       <div className={containerClass}>
         {episodes.map((episode, index) => {
-            // Robust check: match slug OR name, handling both string array (legacy) and object array
+            // Robust check: match slug OR name
             const isWatched = Array.isArray(watchedEpisodes) && watchedEpisodes.some(w => {
-                if (typeof w === 'string') return w === (episode.slug || episode.name); 
-                if (typeof w === 'object' && w !== null) {
-                     return (episode.slug && w.episodeSlug === episode.slug) || (w.episodeName === episode.name);
-                }
-                return false;
+                const matchSlug = (episode.slug && w.episodeSlug === episode.slug);
+                const matchName = (w.episodeName === episode.name);
+                return matchSlug || matchName;
             });
 
             const isCurrent = index === currentEpisode;
