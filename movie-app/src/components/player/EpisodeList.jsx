@@ -40,7 +40,7 @@ function EpisodeList({ episodes, currentEpisode, onEpisodeSelect, watchedEpisode
             if (isCurrent) {
                 buttonClass += " bg-blue-600 border-blue-500 text-white shadow-md z-10 scale-105";
             } else if (isWatched) {
-                buttonClass += " bg-gray-800 border-gray-700 text-gray-500 opacity-75 hover:opacity-100 hover:bg-gray-700 hover:text-gray-200";
+                buttonClass += " bg-gray-900 border-gray-800 text-gray-600 opacity-50 hover:opacity-100 hover:bg-gray-800 hover:text-gray-400";
             } else {
                 buttonClass += " bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-500";
             }

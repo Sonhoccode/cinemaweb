@@ -281,7 +281,13 @@ function MovieDetail() {
                         <div className="space-y-6">
                             {renderEpisodeSection(t('server.vietsub'), serverGroups.vietsub)}
                             {renderEpisodeSection(t('server.long'), serverGroups.long)}
-                            {!serverGroups.vietsub && !serverGroups.long && (
+                            {renderEpisodeSection(t('server.thuyetminh'), serverGroups.thuyetminh)}
+                            {serverGroups.other.map((group, idx) => (
+                                <React.Fragment key={idx}>
+                                    {renderEpisodeSection(group.server?.server_name || t('server.generic', {index: idx + 1}), group)}
+                                </React.Fragment>
+                            ))}
+                            {!serverGroups.vietsub && !serverGroups.long && !serverGroups.thuyetminh && serverGroups.other.length === 0 && (
                               <p className="text-gray-500 text-center py-4">{t('movie.updating')}</p>
                             )}
                         </div>
