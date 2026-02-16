@@ -127,6 +127,7 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
                     'progress', 'current-time', 'duration', 'mute', 'volume', 
                     'captions', 'settings', 'fullscreen'
                 ],
+                fullscreen: { enabled: true, fallback: true, iosNative: true },
                 settings: ['quality', 'speed'], // Remove 'loop' to simplify
                 speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
                 quality: {
@@ -193,7 +194,7 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
        const player = new Plyr(video, {
             controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
             seekTime: seekTime,
-            seekTime: seekTime,
+            fullscreen: { enabled: true, fallback: true, iosNative: true },
             autoplay: syncAutoPlay,
             muted: true, // Critical for mobile autoplay
             keyboard: { focused: true, global: true },
