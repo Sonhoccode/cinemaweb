@@ -243,124 +243,124 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
   }, [showSettings, plyrContainer]);
 
   const renderCustomControls = () => {
-      const controls = (
-          <>
-            {/* Settings Toggle Button (Top Right) */}
-            <button 
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setShowSettings(!showSettings);
-                }}
-                className="custom-settings-btn absolute top-4 right-4 z-[90] p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition-all"
-                title={t('video.settingsButtonTitle')}
+      const settingsOverlay = showSettings ? (
+        <div 
+            className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 animate-fadeIn"
+            onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings(false);
+            }}
+            style={{ touchAction: 'none' }} // Prevent scrolling background
+        >
+            <div 
+                className="bg-gray-800 rounded-xl p-6 w-full max-w-sm border border-gray-700 shadow-2xl relative"
+                onClick={(e) => e.stopPropagation()}
             >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            </button>
-
-            {/* Settings Overlay */}
-            {showSettings && (
-                <div 
-                    className="absolute inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+                <button 
                     onClick={(e) => {
                         e.stopPropagation();
                         setShowSettings(false);
                     }}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white"
                 >
-                    <div 
-                        className="bg-gray-800 rounded-xl p-6 w-full max-w-sm border border-gray-700 shadow-2xl relative animate-fadeIn"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowSettings(false);
-                            }}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                        
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                            {t('video.settingsTitle')}
-                        </h3>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                    {t('video.settingsTitle')}
+                </h3>
 
-                        <div className="space-y-6">
-                            {/* Seek Time Control */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-3">{t('video.seekLabel')}</label>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {[5, 10, 15, 30].map(time => (
-                                        <button
-                                            key={time}
-                                            onClick={() => handleSeekTimeChange(time)}
-                                            className={`py-2 px-1 rounded text-sm font-medium transition-colors ${
-                                                seekTime === time 
-                                                ? 'bg-blue-600 text-white' 
-                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                            }`}
-                                        >
-                                            {time}s
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Auto Play Toggle */}
-                            <div className="flex items-center justify-between border-t border-gray-700 pt-4">
-                                <div>
-                                    <span className="block text-sm font-medium text-gray-300">{t('video.autoNext')}</span>
-                                    <span className="text-xs text-gray-500">{t('video.autoNextHint')}</span>
-                                </div>
-                                <button 
-                                    onClick={handleAutoPlayChange}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoPlay ? 'bg-blue-600' : 'bg-gray-700'}`}
+                <div className="space-y-6">
+                    {/* Seek Time Control */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-3">{t('video.seekLabel')}</label>
+                        <div className="grid grid-cols-4 gap-2">
+                            {[5, 10, 15, 30].map(time => (
+                                <button
+                                    key={time}
+                                    onClick={() => handleSeekTimeChange(time)}
+                                    className={`py-2 px-1 rounded text-sm font-medium transition-colors ${
+                                        seekTime === time 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
                                 >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoPlay ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    {time}s
                                 </button>
-                            </div>
+                            ))}
                         </div>
                     </div>
+
+                    {/* Auto Play Toggle */}
+                    <div className="flex items-center justify-between border-t border-gray-700 pt-4">
+                        <div>
+                            <span className="block text-sm font-medium text-gray-300">{t('video.autoNext')}</span>
+                            <span className="text-xs text-gray-500">{t('video.autoNextHint')}</span>
+                        </div>
+                        <button 
+                            onClick={handleAutoPlayChange}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoPlay ? 'bg-blue-600' : 'bg-gray-700'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoPlay ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
                 </div>
-            )}
-          </>
+            </div>
+        </div>
+      ) : null;
+
+      const settingsButton = (
+        <button 
+            onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings(!showSettings);
+            }}
+            className="custom-settings-btn absolute top-4 right-4 z-[90] p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition-all"
+            title={t('video.settingsButtonTitle')}
+        >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
       );
 
-      if (plyrContainer) {
-          return createPortal(controls, plyrContainer);
-      }
-      return controls;
+      return (
+        <>
+            {plyrContainer ? createPortal(settingsButton, plyrContainer) : settingsButton}
+            {settingsOverlay && createPortal(settingsOverlay, document.body)}
+        </>
+      );
   };
 
   const handleWrapperClick = (e) => {
-      // Ignore clicks on buttons inputs or Plyr controls to prevent double actions
+      // Ignore clicks on buttons inputs or Plyr controls
       if (
         e.target.tagName === 'BUTTON' || 
         e.target.tagName === 'INPUT' || 
         e.target.closest('button') || 
         e.target.closest('.plyr__controls') ||
-        e.target.closest('.custom-settings-btn')
+        e.target.closest('.custom-settings-btn') ||
+        e.target.closest('.custom-center-btn') // Ignore clicks on our new center button
       ) {
           return;
       }
       
-      // If settings are open, close them instead of toggling play
+      // If settings are open, close them
       if (showSettings) {
           setShowSettings(false);
           return;
       }
 
-      console.log('Wrapper click - toggling play');
-      playerRef.current?.togglePlay();
+      // NO togglePlay here per user request ("bỏ nhấp là dừng")
+      // Just let it be handled by the button
   };
 
   return (
     <div 
         className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow relative z-20 group cursor-pointer"
-        onClick={handleWrapperClick}
+        onClickCapture={handleWrapperClick}
     >
       {/* Basic Clean CSS for Plyr */}
       <style>{`
@@ -380,6 +380,16 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
         .plyr__control:hover {
             background: #3b82f6 !important;
             color: #fff !important;
+        }
+
+        /* Enforce high z-index for fullscreen to cover other UI elements */
+        .plyr--fullscreen-active {
+            z-index: 9999 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
         }
         
         /* Sync custom button visibility with Plyr controls */
@@ -404,13 +414,20 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
 
         /* Force controls visible in portrait mobile (both inline and fullscreen) */
         @media (orientation: portrait) and (max-width: 768px) {
-            .plyr__controls,
-            .custom-settings-btn {
+            .plyr .plyr__controls,
+            .plyr--hide-controls .plyr__controls,
+            .custom-settings-btn,
+            .plyr--hide-controls .custom-settings-btn,
+            .plyr--hide-controls .custom-settings-btn {
                 opacity: 1 !important;
                 visibility: visible !important;
                 pointer-events: auto !important;
                 display: flex !important;
+                transform: translateY(0) !important; /* Prevent sliding out */
             }
+            
+            /* Hide the large play button in center if controls are visible and playing? 
+               Usually Plyr handles this, but ensuring controls layer is top */
         }
       `}</style>
       
