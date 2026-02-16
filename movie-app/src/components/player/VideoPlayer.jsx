@@ -359,7 +359,7 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
 
   return (
     <div 
-        className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow relative z-20 group"
+        className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow relative z-20 group cursor-pointer"
         onClick={handleWrapperClick}
     >
       {/* Basic Clean CSS for Plyr */}
@@ -400,6 +400,17 @@ const VideoPlayer = forwardRef(({ src, onStateChange, onReady, syncAutoPlay = tr
             opacity: 1 !important;
             visibility: visible !important;
             pointer-events: auto !important;
+        }
+
+        /* Force controls visible in portrait mobile (both inline and fullscreen) */
+        @media (orientation: portrait) and (max-width: 768px) {
+            .plyr__controls,
+            .custom-settings-btn {
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+                display: flex !important;
+            }
         }
       `}</style>
       
