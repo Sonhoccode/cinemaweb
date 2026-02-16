@@ -10,6 +10,7 @@ function Header() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   // Data for menus
   const [categories, setCategories] = useState([]);
@@ -40,8 +41,15 @@ function Header() {
     };
     fetchData();
 
+    fetchData();
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile search when location changes
+  useEffect(() => {
+    setIsSearchOpen(false);
+  }, [location]);
 
   const NavItem = ({ title, children }) => (
       <div className="relative group px-3 py-2">
@@ -141,11 +149,18 @@ function Header() {
               </button>
             </div>
           </div>
-          <Link to="/search" className="p-2 text-gray-300 hover:text-accent-cyan transition-colors sm:hidden">
+          <button 
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className="p-2 text-gray-300 hover:text-accent-cyan transition-colors sm:hidden"
+          >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+               {isSearchOpen ? (
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+               ) : (
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+               )}
             </svg>
-          </Link>
+          </button>
 
           {user ? (
              <div className="relative group">
@@ -164,6 +179,11 @@ function Header() {
                   <Link to="/history" className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
                      {t('nav.history')}
                   </Link>
+                  {user.role === 'ADMIN' && (
+                    <Link to="/admin" className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                      Admin
+                    </Link>
+                  )}
                   <Link to="/settings" className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
                      {t('nav.settings')}
                   </Link>
@@ -193,6 +213,15 @@ function Header() {
           )}
         </div>
       </nav>
+
+      {/* Mobile Search Bar */}
+      <div className={`
+        absolute top-full left-0 w-full bg-primary-dark/95 backdrop-blur-md border-t border-white/10 p-4 transition-all duration-300 origin-top
+        ${isSearchOpen ? 'opacity-100 scale-y-100 visible' : 'opacity-0 scale-y-0 invisible'}
+        sm:hidden block
+      `}>
+          <SearchBar />
+      </div>
     </header>
   );
 }

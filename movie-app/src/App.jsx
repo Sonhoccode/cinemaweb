@@ -13,6 +13,7 @@ import Search from './pages/Search';
 import Category from './pages/Category';
 import NotFound from './pages/NotFound';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
 import ScrollToTop from './components/common/ScrollToTop';
 
 
@@ -37,6 +38,7 @@ function App() {
         <Route path="/country/:slug" element={<Category type="country" />} />
         <Route path="/year/:slug" element={<Category type="year" />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <ScrollToTop />

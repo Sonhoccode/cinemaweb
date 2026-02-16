@@ -12,6 +12,7 @@ const protect = asyncHandler(async (req, res, next) => {
     try {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
+      console.log('Protect Middleware - Token:', token); // Debug log
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -23,6 +24,7 @@ const protect = asyncHandler(async (req, res, next) => {
           id: true,
           username: true,
           email: true,
+          role: true,
           createdAt: true
         }
       });
@@ -46,4 +48,17 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-module.exports = { protect };
+const admin = (req, res, next) => {
+  console.log('Admin Middleware Check:');
+  console.log('User ID:', req.user?.id);
+  console.log('User Role:', req.user?.role);
+  
+  if (req.user && req.user.role === 'ADMIN') {
+    next();
+  } else {
+    res.status(401);
+    throw new Error('Not authorized as an admin');
+  }
+};
+
+module.exports = { protect, admin };

@@ -47,6 +47,7 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user.id,
       username: user.username,
       email: user.email,
+      role: user.role,
       token: generateToken(user.id),
     });
   } else {
@@ -76,6 +77,7 @@ const loginUser = asyncHandler(async (req, res) => {
       _id: user.id,
       username: user.username,
       email: user.email,
+      role: user.role,
       token: generateToken(user.id),
     });
   } else {
@@ -94,6 +96,7 @@ const getMe = asyncHandler(async (req, res) => {
           id: true,
           username: true,
           email: true,
+          role: true,
           createdAt: true
       }
   });
@@ -107,8 +110,25 @@ const generateToken = (id) => {
   });
 };
 
+// @desc    Get all users
+// @route   GET /api/auth/users
+// @access  Private/Admin
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+  res.status(200).json(users);
+});
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
+  getUsers,
 };

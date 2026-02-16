@@ -160,7 +160,7 @@ function HotMovies() {
 
           {/* Right Navigation (Desktop) */}
           <div className="hidden lg:col-span-4 lg:flex flex-col gap-4 h-[600px] overflow-y-auto scrollbar-hide py-4 pl-4 mask-image-b">
-             <div className="text-gray-400 font-bold uppercase tracking-widest text-sm mb-2 border-b border-gray-800 pb-2">
+             <div className="text-gray-400  font-bold uppercase tracking-widest text-sm mb-2 border-b border-gray-800 pb-2">
                 Trending Now
              </div>
              {movies.map((movie, index) => (
