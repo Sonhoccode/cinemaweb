@@ -100,13 +100,20 @@ function Watch() {
   }, [user, movie, servers]);
 
   const fetchHistory = async () => {
+    if (!user?.token || !movie) return;
     try {
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/history`, {
             headers: {
                 'Authorization': `Bearer ${user.token}`
             }
         });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch history: ${response.status}`);
+        }
         const history = await response.json();
+        if (!Array.isArray(history)) {
+            throw new Error('History payload is not an array');
+        }
         const movieHistory = history.filter(h => h.movieSlug === movie.slug);
         
         // Store full history objects for robust matching
@@ -151,6 +158,7 @@ function Watch() {
         }
     } catch (error) {
         console.error("Failed to fetch history", error);
+        setWatchedEpisodes([]);
         // Fallback
         if (!initialLoadDone) {
              const epParam = searchParams.get('ep');
@@ -211,7 +219,7 @@ function Watch() {
 
   useEffect(() => {
     if (user && movie && !loading) {
-      const serverData = movie.episodes?.[0]?.server_data || [];
+      const serverData = movie.episodes?.[serverIndex]?.server_data || [];
       const currentEpData = serverData[currentEpisode];
       
       if (currentEpData) {
@@ -226,7 +234,7 @@ function Watch() {
         });
       }
     }
-  }, [user, movie, currentEpisode, loading]);
+  }, [user, movie, currentEpisode, loading, serverIndex]);
 
   const saveHistory = async (data) => {
     try {

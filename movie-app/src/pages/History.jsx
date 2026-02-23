@@ -9,15 +9,24 @@ const History = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [posterMap, setPosterMap] = useState({});
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { t, locale } = useI18n();
 
   useEffect(() => {
+    if (isLoading) return;
+    if (!user?.token) {
+      setLoading(false);
+      return;
+    }
     fetchHistory();
-  }, []);
+  }, [user, isLoading]);
 
   const fetchHistory = async () => {
     try {
+      if (!user?.token) {
+        setHistory([]);
+        return;
+      }
       // We'll add this endpoint to api.js later, for now fetching directly
       // In a real app, this should be in api.js or history service
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/history`, {
@@ -25,12 +34,21 @@ const History = () => {
           Authorization: `Bearer ${user.token}`,
         },
       });
+      if (!response.ok) {
+        console.error('Error fetching history:', response.status);
+        setHistory([]);
+        return;
+      }
       const data = await response.json();
-      if (response.ok) {
+      if (Array.isArray(data)) {
         setHistory(data);
+      } else {
+        console.error('History payload is not an array');
+        setHistory([]);
       }
     } catch (error) {
       console.error('Error fetching history:', error);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
@@ -51,7 +69,7 @@ const History = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen pt-24 container mx-auto px-4">
         <h1 className="text-3xl font-bold text-white mb-8">{t('history.title')}</h1>
@@ -62,6 +80,24 @@ const History = () => {
               <div className="h-4 bg-white/10 rounded w-3/4"></div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pt-24 container mx-auto px-4">
+        <h1 className="text-3xl font-bold text-white mb-8">{t('history.title')}</h1>
+        <div className="text-center py-20 bg-primary-lighter rounded-2xl border border-white/5">
+          <h3 className="text-xl font-bold text-white mb-2">{t('comment.loginRequired')}</h3>
+          <p className="text-gray-400 mb-6">{t('history.emptyDesc')}</p>
+          <Link
+            to="/login"
+            className="inline-block px-6 py-3 bg-blue-600 rounded-full text-white font-bold hover:shadow-lg transition-all"
+          >
+            {t('comment.loginNow')}
+          </Link>
         </div>
       </div>
     );

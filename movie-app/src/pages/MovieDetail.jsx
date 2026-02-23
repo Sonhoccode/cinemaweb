@@ -87,17 +87,29 @@ function MovieDetail() {
   }, [servers]);
 
   const fetchHistory = async () => {
+    if (!user?.token) return;
     try {
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/history`, {
             headers: {
                 'Authorization': `Bearer ${user.token}`
             }
         });
+        if (!response.ok) {
+            console.error('Failed to fetch history:', response.status);
+            setWatchedEpisodes([]);
+            return;
+        }
         const history = await response.json();
+        if (!Array.isArray(history)) {
+            console.error('History payload is not an array');
+            setWatchedEpisodes([]);
+            return;
+        }
         const movieHistory = history.filter(h => h.movieSlug === slug);
         setWatchedEpisodes(movieHistory);
     } catch (error) {
         console.error("Failed to fetch history", error);
+        setWatchedEpisodes([]);
     }
   };
 
